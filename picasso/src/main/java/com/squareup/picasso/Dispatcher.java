@@ -83,22 +83,19 @@ class Dispatcher {
 
   void performSubmit(Request request) {
     BitmapHunter hunter = hunterMap.get(request.getKey());
-    if (hunter == null) {
-      hunter = BitmapHunter.forRequest(context, request.getPicasso(), this, request, downloader);
+    if (hunter != null) {
       hunter.attach(request);
-
-      Bitmap cache = loadFromCache(request);
-      if (cache != null) {
-        hunter.loadedFrom = MEMORY;
-        performComplete(hunter);
-        return;
-      }
-
-      hunterMap.put(request.getKey(), hunter);
-      hunter.future = service.submit(hunter);
-    } else {
-      hunter.attach(request);
+      return;
     }
+    hunter = BitmapHunter.forRequest(context, request.getPicasso(), this, request, downloader);
+    Bitmap cache = loadFromCache(request);
+    if (cache != null) {
+      hunter.loadedFrom = MEMORY;
+      performComplete(hunter);
+      return;
+    }
+    hunterMap.put(request.getKey(), hunter);
+    hunter.future = service.submit(hunter);
   }
 
   void performCancel(Request request) {
@@ -181,7 +178,6 @@ class Dispatcher {
   }
 
   static class DispatcherThread extends HandlerThread {
-
     DispatcherThread() {
       super(Utils.THREAD_PREFIX + DISPATCHER_THREAD_NAME, THREAD_PRIORITY_BACKGROUND);
     }
